@@ -88,14 +88,16 @@ function updateCheck(folder_id) {
   for (key in updateFolderMap) {
     item = updateFolderMap[key];
     updateText +=
-      item.filename + '　更新日時：' + Utilities.formatDate(item.lastUpdate, "JST", "yyyy-MM-dd HH:mm:ss") + '\n'
+      item.filename + ', updated at ' + Utilities.formatDate(item.lastUpdate, "JST", "yyyy-MM-dd HH:mm:ss") + '\n'
       + DriveApp.getFileById(item.fileId).getUrl() + "\n\n"
   }
 
   if (updateFolderMap.length != 0) {
     SEND_MAIL_ADDRESS.forEach(function (o, i) {
-      MailApp.sendEmail(SEND_MAIL_ADDRESS[i], targetFolder.getName() + "更新連絡通知",
-        "【" + targetFolder.getName() + "】が更新されました。\n\n" +
+      MailApp.sendEmail(
+        SEND_MAIL_ADDRESS[i],
+        "[GoogleDrive] Updated " + updateFolderMap.length + " files in " + targetFolder.getName(),
+        "[GoogleDrive] Updated " + updateFolderMap.length + " files in " + targetFolder.getName() + "\n\n" +
         updateText
       );
     });
