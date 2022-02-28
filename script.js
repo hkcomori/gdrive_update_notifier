@@ -1,16 +1,15 @@
+const prop = PropertiesService.getScriptProperties();
 //対象とするGoogleDriveフォルダのID　ブラウザでアクセスしてURL見れば分かる
-var TARGET_FOLDER_ID = "xxxxxxxxxxxxxxxxxxxxxx";
-//更新日時を記録するスプレッドシートのID　ブラウザでアクセスしてURL見れば分かる
-var UPDATE_SHEET_ID = "xxxxxxxxxxxxxxxxxxxxxx";
-//スプレッドシートのシート名（下に表示されるタブのやつ）
-var UPDATE_SHEET_NAME = "シート1";
+const TARGET_FOLDER_IDS = JSON.parse(prop.getProperty('TARGET_FOLDER_IDS'));
 // 送信先のメールアドレス　このスクリプトの実行ユーザーは、送信済みトレイに入るので注意
-var SEND_MAIL_ADDRESS = ["user1@example.com", "user2@example.com"]
+const SEND_MAIL_ADDRESS = JSON.parse(prop.getProperty('SEND_MAIL_ADDRESS'));
 
-function updateCheck() {
-  var targetFolder = DriveApp.getFolderById(TARGET_FOLDER_ID);
-  var folders = targetFolder.getFolders();
-  var files = targetFolder.getFiles();
+function updateChecks() {
+  TARGET_FOLDER_IDS.forEach(folder_id => updateCheck(folder_id));
+}
+
+function updateCheck(folder_id) {
+  const targetFolder = DriveApp.getFolderById(folder_id);
 
   //フォルダ内を再帰的に探索してすべてのファイルIDを配列にして返す
   function getAllFilesId(targetFolder) {
@@ -33,7 +32,7 @@ function updateCheck() {
   //Logger.log('getAllFilesId(targetFolder):' + getAllFilesId(targetFolder));
   var allFilesId = getAllFilesId(targetFolder);
   var lastUpdateMap = {};
-  //Logger.log(folders)
+  //Logger.log(targetFolder.getFiles())
   allFilesId.forEach(
     function (value, i) {
       var file = DriveApp.getFileById(value);
@@ -42,8 +41,15 @@ function updateCheck() {
   );
 
   // スプレッドシートに記載されているフォルダ名と更新日時を取得。
-  var spreadsheet = SpreadsheetApp.openById(UPDATE_SHEET_ID);
-  var sheet = spreadsheet.getSheetByName(UPDATE_SHEET_NAME);
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const updateSheetId = spreadsheet.getId();
+  const sheet = (() => {
+    try {
+      return spreadsheet.insertSheet(folder_id);
+    } catch (error) {
+      return spreadsheet.getSheetByName(folder_id);
+    }
+  })();
   //Logger.log(sheet)
   var data = sheet.getDataRange().getValues();
   //Logger.log('data: ' + data)
@@ -56,7 +62,7 @@ function updateCheck() {
   // 実際のフォルダとスプレッドシート情報を比較。
   var updateFolderMap = [];
   for (key in lastUpdateMap) {
-    if (UPDATE_SHEET_ID == lastUpdateMap[key].fileId) {
+    if (updateSheetId == lastUpdateMap[key].fileId) {
       continue;
     }
     if (key in sheetData) {
