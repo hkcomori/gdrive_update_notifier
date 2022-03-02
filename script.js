@@ -11,34 +11,30 @@ function updateChecks() {
 function updateCheck(folder_id) {
   const targetFolder = DriveApp.getFolderById(folder_id);
 
-  //フォルダ内を再帰的に探索してすべてのファイルIDを配列にして返す
-  function getAllFilesId(targetFolder) {
-    var filesIdList = [];
+  // フォルダ内を再帰的に探索してすべてのファイル情報を取得する
+  function getAllFilesId(parentFolder, targetFolder) {
+    let fileMap = {};
 
     var files = targetFolder.getFiles();
     while (files.hasNext()) {
-      filesIdList.push(files.next().getId());
+      const file = files.next();
+      fileMap[parentFolder + '/' + file.getName()] = {
+        lastUpdate: file.getLastUpdated(),
+        fileId: file.getId()
+      };
     }
 
     var child_folders = targetFolder.getFolders();
     while (child_folders.hasNext()) {
       var child_folder = child_folders.next();
-      //Logger.log( 'child_folder :' + child_folder );
-      //Logger.log('getAllFilesId(child_folder):'+ getAllFilesId(child_folder));
-      filesIdList = filesIdList.concat(getAllFilesId(child_folder));
+      fileMap = Object.assign(
+        fileMap, getAllFilesId(parentFolder + '/' + child_folder.getName(), child_folder));
     }
-    return filesIdList;
+
+    return fileMap;
   }
-  //Logger.log('getAllFilesId(targetFolder):' + getAllFilesId(targetFolder));
-  var allFilesId = getAllFilesId(targetFolder);
-  var lastUpdateMap = {};
-  //Logger.log(targetFolder.getFiles())
-  allFilesId.forEach(
-    function (value, i) {
-      var file = DriveApp.getFileById(value);
-      lastUpdateMap[file.getName()] = { lastUpdate: file.getLastUpdated(), fileId: file.getId() };
-    }
-  );
+
+  const lastUpdateMap = getAllFilesId('.', targetFolder);
 
   // スプレッドシートに記載されているフォルダ名と更新日時を取得。
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
