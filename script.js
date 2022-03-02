@@ -24,11 +24,11 @@ function updateCheck(folder_id) {
       };
     }
 
-    var child_folders = targetFolder.getFolders();
-    while (child_folders.hasNext()) {
-      var child_folder = child_folders.next();
+    var childFolders = targetFolder.getFolders();
+    while (childFolders.hasNext()) {
+      var childFolder = childFolders.next();
       fileMap = Object.assign(
-        fileMap, getAllFilesId(parentFolder + '/' + child_folder.getName(), child_folder));
+        fileMap, getAllFilesId(parentFolder + '/' + childFolder.getName(), childFolder));
     }
 
     return fileMap;
